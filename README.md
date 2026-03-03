@@ -1,98 +1,271 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Sibudaya — Sistem Informasi Layanan Fasilitasi Lembaga Budaya
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend API untuk sistem pengelolaan pengajuan fasilitasi lembaga budaya pada Dinas terkait.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+- **Framework** — NestJS (Node.js)
+- **ORM** — Prisma v7
+- **Database** — PostgreSQL
+- **Auth** — Passport.js (JWT + Google OAuth 2.0)
+- **Dokumentasi API** — Swagger UI
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Prasyarat
 
-```bash
-$ pnpm install
-```
+Pastikan sudah terinstall di mesin kamu:
 
-## Compile and run the project
+- [Node.js](https://nodejs.org) v18+
+- [pnpm](https://pnpm.io) `npm install -g pnpm`
+- [PostgreSQL](https://www.postgresql.org) (running di localhost)
+
+---
+
+## Setup Project
+
+### 1. Clone repository
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+git clone https://github.com/Ghanz08/Sibudaya.git
+cd Sibudaya
 ```
 
-## Run tests
+### 2. Install dependencies
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm install
 ```
 
-## Deployment
+### 3. Buat file `.env`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Copy dari template:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Lalu edit `.env` sesuai konfigurasi lokal:
 
-## Resources
+```dotenv
+# Database
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/fasilitasi_dinas"
 
-Check out a few resources that may come in handy when working with NestJS:
+# App
+PORT=3000
+FRONTEND_URL=http://localhost:3001
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# JWT — generate dengan perintah di bawah
+JWT_SECRET=isi_dengan_random_64_bytes
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=isi_dengan_random_64_bytes_berbeda
+JWT_REFRESH_EXPIRES_IN=7d
 
-## Support
+# Google OAuth
+GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxx
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+> **Generate JWT Secret:**
+>
+> ```bash
+> node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+> ```
+>
+> Jalankan dua kali — hasilnya berbeda untuk `JWT_SECRET` dan `JWT_REFRESH_SECRET`.
 
-## Stay in touch
+### 4. Buat database PostgreSQL
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+createdb fasilitasi_dinas
+```
 
-## License
+### 5. Jalankan migrasi
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+npx prisma migrate deploy
+```
+
+### 6. Generate Prisma Client
+
+```bash
+npx prisma generate
+```
+
+### 7. Seed SUPER_ADMIN
+
+```bash
+npx ts-node --project tsconfig.json prisma/seed.ts
+```
+
+Akun default yang dibuat:
+| Field | Value |
+|-------|-------|
+| Email | `superadmin@fasilitasi.go.id` |
+| Password | `SuperAdmin@2026!` |
+| Role | `SUPER_ADMIN` |
+
+> ⚠️ Segera ganti password setelah login pertama.
+
+### 8. Jalankan server
+
+```bash
+# Development (watch mode)
+pnpm start:dev
+
+# Production
+pnpm build
+pnpm start:prod
+```
+
+Server berjalan di: `http://localhost:3000`
+
+---
+
+## Dokumentasi API (Swagger)
+
+Buka di browser:
+
+```
+http://localhost:3000/api/docs
+```
+
+### Cara test endpoint protected di Swagger:
+
+1. Login via `POST /api/v1/auth/login`
+2. Copy `access_token` dari response
+3. Klik tombol **🔒 Authorize** di pojok kanan atas
+4. Paste token → **Authorize**
+5. Semua endpoint protected sekarang bisa diakses
+
+---
+
+## Endpoint Auth
+
+Base URL: `/api/v1/auth`
+
+| Method | Endpoint            | Deskripsi                                  | Auth       |
+| ------ | ------------------- | ------------------------------------------ | ---------- |
+| `POST` | `/register`         | Register user baru (role: USER)            | —          |
+| `POST` | `/login`            | Login email & password                     | —          |
+| `POST` | `/refresh`          | Tukar refresh_token → access_token baru    | —          |
+| `POST` | `/forgot-password`  | Request reset password                     | —          |
+| `POST` | `/reset-password`   | Reset password dengan token                | —          |
+| `GET`  | `/google`           | Redirect ke halaman login Google           | —          |
+| `GET`  | `/google/callback`  | Callback Google OAuth                      | —          |
+| `GET`  | `/me`               | Data user yang sedang login                | JWT        |
+| `GET`  | `/admin-only`       | Contoh endpoint khusus ADMIN & SUPER_ADMIN | JWT + Role |
+| `GET`  | `/super-admin-only` | Contoh endpoint khusus SUPER_ADMIN         | JWT + Role |
+
+### Contoh Request & Response
+
+**Register**
+
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+```
+
+```json
+{
+  "access_token": "eyJ...",
+  "refresh_token": "eyJ...",
+  "user": {
+    "user_id": "uuid",
+    "email": "user@example.com",
+    "role": "USER",
+    "provider": "LOCAL",
+    "created_at": "2026-03-03T00:00:00.000Z"
+  }
+}
+```
+
+**Login**
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "superadmin@fasilitasi.go.id",
+  "password": "SuperAdmin@2026!"
+}
+```
+
+**Akses endpoint protected**
+
+```http
+GET /api/v1/auth/me
+Authorization: Bearer <access_token>
+```
+
+**Refresh token**
+
+```http
+POST /api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "eyJ..."
+}
+```
+
+---
+
+## Role & Akses
+
+| Role          | Deskripsi                                       |
+| ------------- | ----------------------------------------------- |
+| `USER`        | Lembaga Budaya — mengajukan fasilitasi          |
+| `ADMIN`       | Admin Dinas — review dan approve pengajuan      |
+| `SUPER_ADMIN` | Pengelola sistem — manage admin dan konfigurasi |
+
+---
+
+## Struktur Folder
+
+```
+src/
+├── auth/
+│   ├── decorators/       # @Roles(), @CurrentUser()
+│   ├── dto/              # RegisterDto, LoginDto, dll
+│   ├── guards/           # JwtAuthGuard, RolesGuard, dll
+│   ├── strategies/       # LocalStrategy, JwtStrategy, GoogleStrategy
+│   ├── auth.controller.ts
+│   ├── auth.module.ts
+│   └── auth.service.ts
+├── prisma/
+│   ├── prisma.module.ts
+│   └── prisma.service.ts
+├── app.module.ts
+└── main.ts
+prisma/
+├── schema.prisma
+├── seed.ts
+└── migrations/
+```
+
+---
+
+## Environment Variables
+
+| Variable                 | Wajib | Deskripsi                                                  |
+| ------------------------ | ----- | ---------------------------------------------------------- |
+| `DATABASE_URL`           | ✅    | PostgreSQL connection string                               |
+| `JWT_SECRET`             | ✅    | Secret untuk signing access token                          |
+| `JWT_EXPIRES_IN`         | ✅    | Masa berlaku access token (contoh: `15m`)                  |
+| `JWT_REFRESH_SECRET`     | ✅    | Secret untuk signing refresh token                         |
+| `JWT_REFRESH_EXPIRES_IN` | ✅    | Masa berlaku refresh token (contoh: `7d`)                  |
+| `GOOGLE_CLIENT_ID`       | ✅\*  | Google OAuth Client ID                                     |
+| `GOOGLE_CLIENT_SECRET`   | ✅\*  | Google OAuth Client Secret                                 |
+| `GOOGLE_CALLBACK_URL`    | ✅\*  | URL callback Google OAuth                                  |
+| `PORT`                   | —     | Port server (default: `3000`)                              |
+| `FRONTEND_URL`           | —     | URL frontend untuk CORS (default: `http://localhost:3001`) |
+
+\*Wajib jika menggunakan fitur Google OAuth.
