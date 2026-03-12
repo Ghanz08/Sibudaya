@@ -142,6 +142,14 @@ JWT_REFRESH_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-xxx
 GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+
+# Resend Email — https://resend.com/api-keys
+RESEND_API_KEY=re_your_resend_api_key
+RESEND_FROM_EMAIL=onboarding@resend.dev
+
+# (Opsional) Override default seed credentials
+SUPER_ADMIN_EMAIL=superadmin@fasilitasi.go.id
+SUPER_ADMIN_PASSWORD=SuperAdmin@2026!
 ```
 
 > **Generate JWT Secret:**
@@ -303,14 +311,23 @@ Content-Type: application/json
 
 ```
 src/
+├── admin/
+│   └── pengajuan/        # Review & approval pengajuan oleh admin
 ├── auth/
 │   ├── decorators/       # @Roles(), @CurrentUser()
-│   ├── dto/              # RegisterDto, LoginDto, dll
+│   ├── dto/              # RegisterDto, LoginDto, ForgotPasswordDto, dll
 │   ├── guards/           # JwtAuthGuard, RolesGuard, dll
 │   ├── strategies/       # LocalStrategy, JwtStrategy, GoogleStrategy
 │   ├── auth.controller.ts
 │   ├── auth.module.ts
 │   └── auth.service.ts
+├── common/
+│   └── upload/           # Multer storage & file filter utility
+├── fasilitasi/           # Module fasilitasi lembaga budaya
+├── lembaga/              # Module data lembaga budaya
+├── mail/                 # Mail service (Resend) — reset password email
+├── notifikasi/           # Module notifikasi
+├── pengajuan/            # Pengajuan fasilitasi (user-facing)
 ├── prisma/
 │   ├── prisma.module.ts
 │   └── prisma.service.ts
@@ -320,6 +337,7 @@ prisma/
 ├── schema.prisma
 ├── seed.ts
 └── migrations/
+uploads/                  # File upload (proposal, laporan, dll) — jangan di-commit
 ```
 
 ---
@@ -336,7 +354,12 @@ prisma/
 | `GOOGLE_CLIENT_ID`       | ✅\*  | Google OAuth Client ID                                     |
 | `GOOGLE_CLIENT_SECRET`   | ✅\*  | Google OAuth Client Secret                                 |
 | `GOOGLE_CALLBACK_URL`    | ✅\*  | URL callback Google OAuth                                  |
+| `RESEND_API_KEY`         | ✅\*\* | API key Resend untuk kirim email                           |
+| `RESEND_FROM_EMAIL`      | —     | Alamat pengirim email (default: `onboarding@resend.dev`)   |
 | `PORT`                   | —     | Port server (default: `3000`)                              |
-| `FRONTEND_URL`           | —     | URL frontend untuk CORS (default: `http://localhost:3001`) |
+| `FRONTEND_URL`           | —     | URL frontend untuk link email & CORS (default: `http://localhost:3001`) |
+| `SUPER_ADMIN_EMAIL`      | —     | Email akun SUPER_ADMIN saat seed (default sudah ada)       |
+| `SUPER_ADMIN_PASSWORD`   | —     | Password akun SUPER_ADMIN saat seed (default sudah ada)    |
 
-\*Wajib jika menggunakan fitur Google OAuth.
+\*Wajib jika menggunakan fitur Google OAuth.  
+\*\*Wajib jika menggunakan fitur forgot/reset password via email.
