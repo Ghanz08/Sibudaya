@@ -649,7 +649,7 @@
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"paket_id\": \"00000000-0000-0000-0000-000000000002\",\n  \"catatan\": \"Data lengkap dan sesuai. Paket A ditetapkan.\"\n}"
+              "raw": "{\n  \"paket_id\": \"b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6\",\n  \"catatan\": \"Data lengkap dan sesuai. Paket A ditetapkan.\"\n}"
             }
           }
         },
@@ -1193,7 +1193,7 @@
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"paket_id\": \"00000000-0000-0000-0000-000000000002\",\n  \"catatan\": \"Data lengkap. Paket A (Rp 30.000.000) ditetapkan.\"\n}"
+              "raw": "{\n  \"paket_id\": \"b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6\",\n  \"catatan\": \"Data lengkap. Paket A (Rp 30.000.000) ditetapkan.\"\n}"
             }
           }
         },

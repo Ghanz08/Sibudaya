@@ -344,22 +344,22 @@ uploads/                  # File upload (proposal, laporan, dll) — jangan di-c
 
 ## Environment Variables
 
-| Variable                 | Wajib | Deskripsi                                                  |
-| ------------------------ | ----- | ---------------------------------------------------------- |
-| `DATABASE_URL`           | ✅    | PostgreSQL connection string                               |
-| `JWT_SECRET`             | ✅    | Secret untuk signing access token                          |
-| `JWT_EXPIRES_IN`         | ✅    | Masa berlaku access token (contoh: `15m`)                  |
-| `JWT_REFRESH_SECRET`     | ✅    | Secret untuk signing refresh token                         |
-| `JWT_REFRESH_EXPIRES_IN` | ✅    | Masa berlaku refresh token (contoh: `7d`)                  |
-| `GOOGLE_CLIENT_ID`       | ✅\*  | Google OAuth Client ID                                     |
-| `GOOGLE_CLIENT_SECRET`   | ✅\*  | Google OAuth Client Secret                                 |
-| `GOOGLE_CALLBACK_URL`    | ✅\*  | URL callback Google OAuth                                  |
-| `RESEND_API_KEY`         | ✅\*\* | API key Resend untuk kirim email                           |
-| `RESEND_FROM_EMAIL`      | —     | Alamat pengirim email (default: `onboarding@resend.dev`)   |
-| `PORT`                   | —     | Port server (default: `3000`)                              |
-| `FRONTEND_URL`           | —     | URL frontend untuk link email & CORS (default: `http://localhost:3001`) |
-| `SUPER_ADMIN_EMAIL`      | —     | Email akun SUPER_ADMIN saat seed (default sudah ada)       |
-| `SUPER_ADMIN_PASSWORD`   | —     | Password akun SUPER_ADMIN saat seed (default sudah ada)    |
+| Variable                 | Wajib  | Deskripsi                                                               |
+| ------------------------ | ------ | ----------------------------------------------------------------------- |
+| `DATABASE_URL`           | ✅     | PostgreSQL connection string                                            |
+| `JWT_SECRET`             | ✅     | Secret untuk signing access token                                       |
+| `JWT_EXPIRES_IN`         | ✅     | Masa berlaku access token (contoh: `15m`)                               |
+| `JWT_REFRESH_SECRET`     | ✅     | Secret untuk signing refresh token                                      |
+| `JWT_REFRESH_EXPIRES_IN` | ✅     | Masa berlaku refresh token (contoh: `7d`)                               |
+| `GOOGLE_CLIENT_ID`       | ✅\*   | Google OAuth Client ID                                                  |
+| `GOOGLE_CLIENT_SECRET`   | ✅\*   | Google OAuth Client Secret                                              |
+| `GOOGLE_CALLBACK_URL`    | ✅\*   | URL callback Google OAuth                                               |
+| `RESEND_API_KEY`         | ✅\*\* | API key Resend untuk kirim email                                        |
+| `RESEND_FROM_EMAIL`      | —      | Alamat pengirim email (default: `onboarding@resend.dev`)                |
+| `PORT`                   | —      | Port server (default: `3000`)                                           |
+| `FRONTEND_URL`           | —      | URL frontend untuk link email & CORS (default: `http://localhost:3001`) |
+| `SUPER_ADMIN_EMAIL`      | —      | Email akun SUPER_ADMIN saat seed (default sudah ada)                    |
+| `SUPER_ADMIN_PASSWORD`   | —      | Password akun SUPER_ADMIN saat seed (default sudah ada)                 |
 
 \*Wajib jika menggunakan fitur Google OAuth.  
 \*\*Wajib jika menggunakan fitur forgot/reset password via email.
