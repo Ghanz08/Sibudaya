@@ -11,11 +11,17 @@ export class NotifikasiService {
     });
   }
 
-  findByUser(userId: string) {
-    return this.prisma.notifikasi.findMany({
+  async findByUser(userId: string) {
+    const data = await this.prisma.notifikasi.findMany({
       where: { user_id: userId },
       orderBy: { created_at: 'desc' },
     });
+
+    if (data.length === 0) {
+      return { message: 'Tidak ada notifikasi tersedia', data: [] };
+    }
+
+    return { total: data.length, data };
   }
 
   async bacaNotifikasi(notifikasiId: string, userId: string) {
