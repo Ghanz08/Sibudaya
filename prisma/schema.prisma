@@ -49,11 +49,13 @@ model sertifikat_nik {
 }
 
 model jenis_fasilitasi {
-  jenis_fasilitasi_id Int                @id
-  nama                String             @unique @db.VarChar(50)
-  deskripsi           String?
-  paket_fasilitasi    paket_fasilitasi[]
-  pengajuan           pengajuan[]
+  jenis_fasilitasi_id    Int                @id
+  nama                   String             @unique @db.VarChar(50)
+  deskripsi              String?
+  template_proposal_file String?            @db.VarChar(255)
+  template_laporan_file  String?            @db.VarChar(255)
+  paket_fasilitasi       paket_fasilitasi[]
+  pengajuan              pengajuan[]
 }
 
 model paket_fasilitasi {
