@@ -22,6 +22,17 @@ export class NotifikasiService {
     });
   }
 
+  async kirimKeSuperAdmin(judul: string, pesan: string) {
+    const superAdmins = await this.prisma.users.findMany({
+      where: { role: 'SUPER_ADMIN' },
+      select: { user_id: true },
+    });
+    if (superAdmins.length === 0) return;
+    await this.prisma.notifikasi.createMany({
+      data: superAdmins.map((a) => ({ user_id: a.user_id, judul, pesan })),
+    });
+  }
+
   async findByUser(userId: string) {
     const data = await this.prisma.notifikasi.findMany({
       where: { user_id: userId },

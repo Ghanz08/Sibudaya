@@ -1,6 +1,7 @@
 import {
   IsDateString,
   IsIn,
+  ValidateIf,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -30,9 +31,9 @@ export class SetujuiPemeriksaanDto {
 }
 
 export class TolakPemeriksaanDto {
-  @ApiPropertyOptional()
+  @ApiProperty({ description: 'Alasan penolakan pemeriksaan' })
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   catatan_pemeriksaan?: string;
 }
 
@@ -79,6 +80,50 @@ export class TolakLaporanDto {
   @IsString()
   @IsNotEmpty()
   catatan_admin: string;
+}
+
+// ── Flexible Timeline Status (admin override) ───────────────────────────────
+
+export class UpdateTimelineStatusDto {
+  @ApiProperty({
+    enum: [
+      'PEMERIKSAAN',
+      'SURVEY',
+      'SURAT_PERSETUJUAN',
+      'PENGIRIMAN',
+      'PELAPORAN',
+      'PENCAIRAN',
+    ],
+  })
+  @IsIn([
+    'PEMERIKSAAN',
+    'SURVEY',
+    'SURAT_PERSETUJUAN',
+    'PENGIRIMAN',
+    'PELAPORAN',
+    'PENCAIRAN',
+  ])
+  @IsString()
+  step:
+    | 'PEMERIKSAAN'
+    | 'SURVEY'
+    | 'SURAT_PERSETUJUAN'
+    | 'PENGIRIMAN'
+    | 'PELAPORAN'
+    | 'PENCAIRAN';
+
+  @ApiProperty({ enum: ['IN_PROGRESS', 'COMPLETED', 'REJECTED'] })
+  @IsIn(['IN_PROGRESS', 'COMPLETED', 'REJECTED'])
+  @IsString()
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
+
+  @ApiPropertyOptional({
+    description: 'Alasan penolakan. Wajib saat status = REJECTED',
+  })
+  @ValidateIf((o: UpdateTimelineStatusDto) => o.status === 'REJECTED')
+  @IsString()
+  @IsNotEmpty()
+  note?: string;
 }
 
 // ── Pencairan Dana ───────────────────────────────────────────────────────────

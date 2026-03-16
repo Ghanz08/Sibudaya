@@ -14,6 +14,7 @@ import {
   TolakSurveyDto,
   TolakLaporanDto,
   TolakPemeriksaanDto,
+  UpdateTimelineStatusDto,
   UploadBuktiPencairanDto,
   UploadBuktiPengirimanDto,
   UploadSuratPersetujuanDto,
@@ -90,7 +91,7 @@ export class AdminPengajuanService {
       },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Pemeriksaan Pengajuan Disetujui',
       'Data pengajuan Anda telah diverifikasi dan dinyatakan sesuai ketentuan. Silakan tunggu informasi selanjutnya.',
@@ -109,6 +110,11 @@ export class AdminPengajuanService {
       throw new BadRequestException('Pemeriksaan sudah diproses sebelumnya');
     }
 
+    const rejectionNote = dto.catatan_pemeriksaan?.trim();
+    if (!rejectionNote) {
+      throw new BadRequestException('Alasan penolakan wajib diisi');
+    }
+
     let suratPath: string | undefined;
     if (suratFile) {
       suratPath = this.uploadService.buildFilePath(
@@ -124,15 +130,15 @@ export class AdminPengajuanService {
       data: {
         status_pemeriksaan: STATUS.DITOLAK,
         status: STATUS.DALAM_PROSES,
-        catatan_pemeriksaan: dto.catatan_pemeriksaan,
+        catatan_pemeriksaan: rejectionNote,
         ...(suratPath && { surat_penolakan_file: suratPath }),
       },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Pengajuan Ditolak',
-      `Pemeriksaan data pengajuan ditolak. Silakan perbarui pengajuan atau batalkan pengajuan. ${dto.catatan_pemeriksaan ?? ''}`.trim(),
+      `Pemeriksaan data pengajuan ditolak. Silakan perbarui pengajuan atau batalkan pengajuan. ${rejectionNote}`.trim(),
     );
 
     return updated;
@@ -161,7 +167,7 @@ export class AdminPengajuanService {
       },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Jadwal Survey Lapangan Ditetapkan',
       `Dinas Kebudayaan DIY akan melakukan survey lapangan pada ${dto.tanggal_survey}. Pastikan Anda dapat hadir pada tanggal tersebut.`,
@@ -187,7 +193,7 @@ export class AdminPengajuanService {
       data: { status: STATUS.SELESAI },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Survey Lapangan Selesai',
       'Survey lapangan telah dilaksanakan. Proses selanjutnya akan segera diinformasikan.',
@@ -222,7 +228,7 @@ export class AdminPengajuanService {
       }),
     ]);
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Survey Lapangan Ditolak',
       `Pengajuan hibah tidak dapat dilanjutkan karena hasil survey lapangan ditolak. ${dto.catatan}`,
@@ -281,7 +287,7 @@ export class AdminPengajuanService {
       },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Surat Persetujuan Tersedia',
       'Surat persetujuan telah diterbitkan. Silakan unduh dan lakukan penandatanganan secara langsung di Kantor Dinas Kebudayaan DIY.',
@@ -310,7 +316,7 @@ export class AdminPengajuanService {
       },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Surat Persetujuan Dikonfirmasi',
       'Penandatanganan surat persetujuan telah dikonfirmasi di Kantor Dinas Kebudayaan DIY.',
@@ -348,7 +354,7 @@ export class AdminPengajuanService {
         update: {},
       });
 
-      await this.notifikasiService.kirim(
+      await this.kirimNotifikasiUserDanSuperAdmin(
         userId,
         'Laporan Kegiatan Disetujui',
         'Laporan kegiatan Anda telah diverifikasi. Proses pencairan dana akan segera dilakukan.',
@@ -360,7 +366,7 @@ export class AdminPengajuanService {
         data: { status: STATUS.SELESAI },
       });
 
-      await this.notifikasiService.kirim(
+      await this.kirimNotifikasiUserDanSuperAdmin(
         userId,
         'Pengajuan Selesai',
         'Laporan kegiatan telah diverifikasi. Proses fasilitasi hibah Anda dinyatakan selesai.',
@@ -389,7 +395,7 @@ export class AdminPengajuanService {
       data: { status: STATUS.DITOLAK, catatan_admin: dto.catatan_admin },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Laporan Kegiatan Ditolak',
       `Laporan kegiatan Anda perlu diperbaiki. Alasan: ${dto.catatan_admin}`,
@@ -440,7 +446,7 @@ export class AdminPengajuanService {
       },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Bukti Pencairan Dana Diunggah',
       'Bukti transfer dana fasilitasi telah diunggah oleh Dinas. Mohon menunggu konfirmasi penyelesaian.',
@@ -475,7 +481,7 @@ export class AdminPengajuanService {
       }),
     ]);
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Pencairan Dana Selesai',
       'Dana fasilitasi telah dicairkan ke rekening lembaga budaya Anda. Proses fasilitasi pentas dinyatakan selesai.',
@@ -534,13 +540,287 @@ export class AdminPengajuanService {
       },
     });
 
-    await this.notifikasiService.kirim(
+    await this.kirimNotifikasiUserDanSuperAdmin(
       userId,
       'Sarana Prasarana Dikirim',
       'Fasilitas hibah telah dikirim oleh Dinas Kebudayaan DIY ke alamat yang terdaftar.',
     );
 
     return pengiriman;
+  }
+
+  // ── Flexible Timeline Status (admin override) ────────────────────────────
+
+  async updateTimelineStatus(
+    pengajuanId: string,
+    dto: UpdateTimelineStatusDto,
+  ) {
+    const pengajuan = await this.findDetailOrThrow(pengajuanId);
+    const isPentas = pengajuan.jenis_fasilitasi_id === 1;
+    const now = new Date();
+
+    const targetStatus =
+      dto.status === 'COMPLETED'
+        ? STATUS.SELESAI
+        : dto.status === 'REJECTED'
+          ? STATUS.DITOLAK
+          : STATUS.DALAM_PROSES;
+    const rejectionNote = dto.note?.trim();
+
+    if (targetStatus === STATUS.DITOLAK && !rejectionNote) {
+      throw new BadRequestException('Alasan penolakan wajib diisi');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      switch (dto.step) {
+        case 'PEMERIKSAAN': {
+          await tx.pengajuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: {
+              status_pemeriksaan:
+                targetStatus === STATUS.SELESAI
+                  ? STATUS.DISETUJUI
+                  : targetStatus,
+              status:
+                targetStatus === STATUS.DITOLAK
+                  ? STATUS.DITOLAK
+                  : STATUS.DALAM_PROSES,
+              ...(targetStatus === STATUS.DITOLAK
+                ? { catatan_pemeriksaan: rejectionNote }
+                : {}),
+              ...(targetStatus !== STATUS.DITOLAK
+                ? { catatan_pemeriksaan: null }
+                : {}),
+            },
+          });
+
+          await tx.survey_lapangan.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.surat_persetujuan.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.pengiriman_sarana.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.laporan_kegiatan.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.pencairan_dana.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          break;
+        }
+
+        case 'SURVEY': {
+          if (isPentas) {
+            throw new BadRequestException(
+              'Step survey hanya tersedia untuk Fasilitasi Hibah',
+            );
+          }
+
+          await tx.pengajuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: { status_pemeriksaan: STATUS.DISETUJUI },
+          });
+
+          await tx.survey_lapangan.upsert({
+            where: { pengajuan_id: pengajuanId },
+            create: {
+              pengajuan_id: pengajuanId,
+              tanggal_survey: now,
+              status: targetStatus,
+              catatan: targetStatus === STATUS.DITOLAK ? rejectionNote : dto.note,
+            },
+            update: {
+              status: targetStatus,
+              ...(targetStatus === STATUS.DITOLAK
+                ? { catatan: rejectionNote }
+                : dto.note
+                  ? { catatan: dto.note }
+                  : {}),
+            },
+          });
+
+          await tx.pengajuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: {
+              status: STATUS.DALAM_PROSES,
+            },
+          });
+
+          await tx.surat_persetujuan.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.pengiriman_sarana.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.laporan_kegiatan.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          break;
+        }
+
+        case 'SURAT_PERSETUJUAN': {
+          if (targetStatus === STATUS.DITOLAK) {
+            throw new BadRequestException(
+              'Penolakan step surat persetujuan belum didukung karena tidak ada kolom alasan penolakan',
+            );
+          }
+
+          const surat = await tx.surat_persetujuan.findUnique({
+            where: { pengajuan_id: pengajuanId },
+          });
+
+          if (!surat) {
+            throw new BadRequestException(
+              'Surat persetujuan belum diunggah. Unggah surat terlebih dahulu.',
+            );
+          }
+
+          await tx.surat_persetujuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: {
+              status: targetStatus,
+              tanggal_konfirmasi:
+                targetStatus === STATUS.SELESAI ? now : null,
+            },
+          });
+
+          await tx.pengajuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: {
+              status: STATUS.DALAM_PROSES,
+            },
+          });
+
+          await tx.pengiriman_sarana.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.laporan_kegiatan.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          await tx.pencairan_dana.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          break;
+        }
+
+        case 'PENGIRIMAN': {
+          if (isPentas) {
+            throw new BadRequestException(
+              'Step pengiriman hanya tersedia untuk Fasilitasi Hibah',
+            );
+          }
+
+          await tx.pengiriman_sarana.upsert({
+            where: { pengajuan_id: pengajuanId },
+            create: {
+              pengajuan_id: pengajuanId,
+              status: targetStatus,
+              catatan: targetStatus === STATUS.DITOLAK ? rejectionNote : undefined,
+            },
+            update: {
+              status: targetStatus,
+              ...(targetStatus === STATUS.DITOLAK
+                ? { catatan: rejectionNote }
+                : {}),
+            },
+          });
+
+          await tx.pengajuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: {
+              status:
+                targetStatus === STATUS.DITOLAK
+                  ? STATUS.DITOLAK
+                  : STATUS.DALAM_PROSES,
+            },
+          });
+
+          await tx.laporan_kegiatan.deleteMany({
+            where: { pengajuan_id: pengajuanId },
+          });
+          break;
+        }
+
+        case 'PELAPORAN': {
+          await tx.laporan_kegiatan.upsert({
+            where: { pengajuan_id: pengajuanId },
+            create: {
+              pengajuan_id: pengajuanId,
+              status: targetStatus,
+              catatan_admin:
+                targetStatus === STATUS.DITOLAK ? rejectionNote : dto.note,
+            },
+            update: {
+              status: targetStatus,
+              ...(targetStatus === STATUS.DITOLAK
+                ? { catatan_admin: rejectionNote }
+                : dto.note
+                  ? { catatan_admin: dto.note }
+                  : {}),
+            },
+          });
+
+          if (isPentas) {
+            await tx.pencairan_dana.deleteMany({
+              where: { pengajuan_id: pengajuanId },
+            });
+          }
+
+          await tx.pengajuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: {
+              status:
+                !isPentas && targetStatus === STATUS.SELESAI
+                  ? STATUS.SELESAI
+                  : STATUS.DALAM_PROSES,
+            },
+          });
+          break;
+        }
+
+        case 'PENCAIRAN': {
+          if (!isPentas) {
+            throw new BadRequestException(
+              'Step pencairan hanya tersedia untuk Fasilitasi Pentas',
+            );
+          }
+
+          if (targetStatus === STATUS.DITOLAK) {
+            throw new BadRequestException(
+              'Penolakan step pencairan belum didukung karena tidak ada kolom alasan penolakan',
+            );
+          }
+
+          await tx.pencairan_dana.upsert({
+            where: { pengajuan_id: pengajuanId },
+            create: {
+              pengajuan_id: pengajuanId,
+              status: targetStatus,
+            },
+            update: { status: targetStatus },
+          });
+
+          await tx.pengajuan.update({
+            where: { pengajuan_id: pengajuanId },
+            data: {
+              status:
+                targetStatus === STATUS.SELESAI
+                  ? STATUS.SELESAI
+                  : STATUS.DALAM_PROSES,
+            },
+          });
+          break;
+        }
+
+        default:
+          throw new BadRequestException('Step timeline tidak dikenali');
+      }
+    });
+
+    return this.findDetailOrThrow(pengajuanId);
   }
 
   // ── Private Helpers ───────────────────────────────────────────────────────
@@ -591,5 +871,16 @@ export class AdminPengajuanService {
         'Aksi ini hanya berlaku untuk Fasilitasi Hibah',
       );
     }
+  }
+
+  private async kirimNotifikasiUserDanSuperAdmin(
+    userId: string,
+    judul: string,
+    pesan: string,
+  ) {
+    await Promise.all([
+      this.notifikasiService.kirim(userId, judul, pesan),
+      this.notifikasiService.kirimKeSuperAdmin(judul, pesan),
+    ]);
   }
 }

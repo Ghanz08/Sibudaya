@@ -28,6 +28,7 @@ import {
   TolakSurveyDto,
   TolakLaporanDto,
   TolakPemeriksaanDto,
+  UpdateTimelineStatusDto,
   UploadBuktiPencairanDto,
   UploadBuktiPengirimanDto,
   UploadSuratPersetujuanDto,
@@ -152,6 +153,15 @@ export class AdminPengajuanController {
   @ApiOperation({ summary: 'Tolak laporan kegiatan (wajib alasan)' })
   tolakLaporan(@Param('id') id: string, @Body() dto: TolakLaporanDto) {
     return this.service.tolakLaporan(id, dto);
+  }
+
+  @Patch(':id/timeline/status')
+  @ApiOperation({ summary: 'Ubah status step timeline admin secara fleksibel' })
+  updateTimelineStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateTimelineStatusDto,
+  ) {
+    return this.service.updateTimelineStatus(id, dto);
   }
 
   // ── Step Pentas: Pencairan Dana ───────────────────────────────────────────

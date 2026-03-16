@@ -1,5 +1,5 @@
 /**
- * Seed Script: Membuat akun SUPER_ADMIN pertama kali
+ * Seed Script: Membuat akun USER, ADMIN, dan SUPER_ADMIN pertama kali
  *
  * Cara menjalankan:
  *   npx ts-node prisma/seed.ts
@@ -17,41 +17,62 @@ import * as bcrypt from 'bcryptjs';
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
+type SeedUserConfig = {
+  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+  email: string;
+  password: string;
+};
+
 async function main() {
-  const SUPER_ADMIN_EMAIL =
-    process.env.SUPER_ADMIN_EMAIL ?? 'superadmin@fasilitasi.go.id';
-  const SUPER_ADMIN_PASSWORD =
-    process.env.SUPER_ADMIN_PASSWORD ?? 'SuperAdmin@2026!';
+  const seedUsers: SeedUserConfig[] = [
+    {
+      role: 'USER',
+      email: process.env.USER_EMAIL ?? 'user@fasilitasi.go.id',
+      password: process.env.USER_PASSWORD ?? 'User@2026!',
+    },
+    {
+      role: 'ADMIN',
+      email: process.env.ADMIN_EMAIL ?? 'admin@fasilitasi.go.id',
+      password: process.env.ADMIN_PASSWORD ?? 'Admin@2026!',
+    },
+    {
+      role: 'SUPER_ADMIN',
+      email: process.env.SUPER_ADMIN_EMAIL ?? 'superadmin@fasilitasi.go.id',
+      password: process.env.SUPER_ADMIN_PASSWORD ?? 'SuperAdmin@2026!',
+    },
+  ];
 
-  console.log(`Memeriksa SUPER_ADMIN: ${SUPER_ADMIN_EMAIL}`);
+  console.log('Memeriksa akun default USER/ADMIN/SUPER_ADMIN...');
 
-  const existing = await prisma.users.findUnique({
-    where: { email: SUPER_ADMIN_EMAIL },
-  });
+  for (const account of seedUsers) {
+    const existing = await prisma.users.findUnique({
+      where: { email: account.email },
+    });
 
-  if (existing) {
-    console.log('✅ SUPER_ADMIN sudah ada, langsung ke seed fasilitasi.');
-  } else {
-    const password_hash = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 12);
+    if (existing) {
+      console.log(`✅ ${account.role} sudah ada (${account.email}).`);
+      continue;
+    }
 
-    const superAdmin = await prisma.users.create({
+    const password_hash = await bcrypt.hash(account.password, 12);
+
+    const createdUser = await prisma.users.create({
       data: {
-        email: SUPER_ADMIN_EMAIL,
+        email: account.email,
         password_hash,
-        role: 'SUPER_ADMIN',
+        role: account.role,
         provider: 'LOCAL',
       },
     });
 
-    console.log('✅ SUPER_ADMIN berhasil dibuat:');
-    console.log(`   ID    : ${superAdmin.user_id}`);
-    console.log(`   Email : ${superAdmin.email}`);
-    console.log(`   Role  : ${superAdmin.role}`);
-    console.log('');
-    console.log(
-      '⚠️  PENTING: Segera ubah password default setelah login pertama!',
-    );
-  } // end else
+    console.log(`✅ ${account.role} berhasil dibuat:`);
+    console.log(`   ID    : ${createdUser.user_id}`);
+    console.log(`   Email : ${createdUser.email}`);
+    console.log(`   Role  : ${createdUser.role}`);
+  }
+
+  console.log('');
+  console.log('⚠️  PENTING: Segera ubah password default setelah login pertama!');
 
   // ── Seed jenis & paket fasilitasi ────────────────────────────────────────
   console.log('\nMembuat data jenis & paket fasilitasi...');
