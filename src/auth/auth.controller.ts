@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -27,6 +28,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -123,6 +125,16 @@ export class AuthController {
   @Get('me')
   getProfile(@CurrentUser() user: SafeUser) {
     return user;
+  }
+
+  @ApiOperation({ summary: 'Update profil user yang sedang login' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({ status: 200, description: 'Data user setelah update' })
+  @ApiResponse({ status: 401, description: 'Token tidak valid' })
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  updateProfile(@CurrentUser() user: SafeUser, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user.user_id, dto);
   }
 
   @ApiOperation({ summary: '[ADMIN & SUPER_ADMIN] Contoh endpoint terbatas' })

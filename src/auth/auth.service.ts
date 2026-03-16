@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 
 // Struktur user yang dikembalikan ke controller (tanpa password_hash)
@@ -327,5 +328,41 @@ export class AuthService {
     });
 
     return { message: 'Password berhasil direset' };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<SafeUser> {
+    if (dto.email) {
+      const normalizedEmail = dto.email.trim().toLowerCase();
+      const existing = await this.prisma.users.findUnique({
+        where: { email: normalizedEmail },
+      });
+
+      if (existing && existing.user_id !== userId) {
+        throw new ConflictException('Email sudah terdaftar');
+      }
+    }
+
+    const updated = await this.prisma.users.update({
+      where: { user_id: userId },
+      data: {
+        ...(dto.first_name !== undefined && {
+          first_name: dto.first_name.trim(),
+        }),
+        ...(dto.last_name !== undefined && {
+          last_name: dto.last_name.trim(),
+        }),
+        ...(dto.email !== undefined && {
+          email: dto.email.trim().toLowerCase(),
+        }),
+        ...(dto.no_telp !== undefined && {
+          no_telp: dto.no_telp.trim(),
+        }),
+        ...(dto.address !== undefined && {
+          address: dto.address.trim(),
+        }),
+      },
+    });
+
+    return this.toSafeUser(updated);
   }
 }
