@@ -5,6 +5,49 @@ import { PrismaService } from '../prisma/prisma.service';
 export class NotifikasiService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private withSenderContext(
+    judul: string,
+    pesan: string,
+    namaPengirim: string | null,
+  ) {
+    if (!namaPengirim) {
+      return { judul, pesan };
+    }
+
+    return {
+      judul: `${judul} - Dari: ${namaPengirim}`,
+      pesan: `${pesan} (Dari: ${namaPengirim})`,
+    };
+  }
+
+  private async kirimKeRoles(
+    roles: string[],
+    judul: string,
+    pesan: string,
+    dariUserId?: string,
+  ) {
+    const namaPengirim = dariUserId
+      ? await this.resolveUserDisplayName(dariUserId)
+      : null;
+
+    const formatted = this.withSenderContext(judul, pesan, namaPengirim);
+
+    const targets = await this.prisma.users.findMany({
+      where: { role: { in: roles } },
+      select: { user_id: true },
+    });
+
+    if (targets.length === 0) return;
+
+    await this.prisma.notifikasi.createMany({
+      data: targets.map((user) => ({
+        user_id: user.user_id,
+        judul: formatted.judul,
+        pesan: formatted.pesan,
+      })),
+    });
+  }
+
   private async resolveUserDisplayName(userId: string): Promise<string | null> {
     const user = await this.prisma.users.findUnique({
       where: { user_id: userId },
@@ -29,36 +72,24 @@ export class NotifikasiService {
   }
 
   async kirimKeAdmin(judul: string, pesan: string, dariUserId?: string) {
-    const namaPengirim = dariUserId
-      ? await this.resolveUserDisplayName(dariUserId)
-      : null;
-    const pesanFinal = namaPengirim
-      ? `${pesan} (Dari: ${namaPengirim})`
-      : pesan;
-
-    const admins = await this.prisma.users.findMany({
-      where: { role: 'ADMIN' },
-      select: { user_id: true },
-    });
-    if (admins.length === 0) return;
-    await this.prisma.notifikasi.createMany({
-      data: admins.map((a) => ({
-        user_id: a.user_id,
-        judul,
-        pesan: pesanFinal,
-      })),
-    });
+    return this.kirimKeRoles(['ADMIN'], judul, pesan, dariUserId);
   }
 
-  async kirimKeSuperAdmin(judul: string, pesan: string) {
-    const superAdmins = await this.prisma.users.findMany({
-      where: { role: 'SUPER_ADMIN' },
-      select: { user_id: true },
-    });
-    if (superAdmins.length === 0) return;
-    await this.prisma.notifikasi.createMany({
-      data: superAdmins.map((a) => ({ user_id: a.user_id, judul, pesan })),
-    });
+  async kirimKeSuperAdmin(judul: string, pesan: string, dariUserId?: string) {
+    return this.kirimKeRoles(['SUPER_ADMIN'], judul, pesan, dariUserId);
+  }
+
+  async kirimKeAdminDanSuperAdmin(
+    judul: string,
+    pesan: string,
+    dariUserId?: string,
+  ) {
+    return this.kirimKeRoles(
+      ['ADMIN', 'SUPER_ADMIN'],
+      judul,
+      pesan,
+      dariUserId,
+    );
   }
 
   async findByUser(userId: string) {

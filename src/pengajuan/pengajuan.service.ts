@@ -71,7 +71,7 @@ export class PengajuanService {
       include: this.pengajuanInclude,
     });
 
-    await this.notifikasiService.kirimKeAdmin(
+    await this.notifikasiService.kirimKeAdminDanSuperAdmin(
       'Pengajuan Fasilitasi Pentas Baru',
       `Ada pengajuan Fasilitasi Pentas baru yang perlu diperiksa (${dto.judul_kegiatan ?? ''}).`,
       userId,
@@ -118,7 +118,7 @@ export class PengajuanService {
       include: this.pengajuanInclude,
     });
 
-    await this.notifikasiService.kirimKeAdmin(
+    await this.notifikasiService.kirimKeAdminDanSuperAdmin(
       'Pengajuan Fasilitasi Hibah Baru',
       `Ada pengajuan Fasilitasi Hibah baru (${dto.nama_penerima ?? ''}) yang perlu diperiksa.`,
       userId,
@@ -217,7 +217,7 @@ export class PengajuanService {
       },
     });
 
-    await this.notifikasiService.kirimKeAdmin(
+    await this.notifikasiService.kirimKeAdminDanSuperAdmin(
       'Laporan Kegiatan Diunggah',
       `Pemohon telah mengunggah laporan kegiatan. Silakan tinjau dan setujui laporan tersebut.`,
       userId,
@@ -284,7 +284,7 @@ export class PengajuanService {
       include: this.pengajuanInclude,
     });
 
-    await this.notifikasiService.kirimKeAdmin(
+    await this.notifikasiService.kirimKeAdminDanSuperAdmin(
       'Pengajuan Pentas Diperbarui',
       `Pemohon telah memperbarui data pengajuan Fasilitasi Pentas. Silakan periksa kembali.`,
       userId,
@@ -344,7 +344,7 @@ export class PengajuanService {
       include: this.pengajuanInclude,
     });
 
-    await this.notifikasiService.kirimKeAdmin(
+    await this.notifikasiService.kirimKeAdminDanSuperAdmin(
       'Pengajuan Hibah Diperbarui',
       `Pemohon telah memperbarui data pengajuan Fasilitasi Hibah. Silakan periksa kembali.`,
       userId,
@@ -361,7 +361,7 @@ export class PengajuanService {
     const pengajuan = await this.getOwnedPengajuanOrThrow(pengajuanId, userId);
     this.assertCanRevise(pengajuan.status_pemeriksaan);
 
-    return this.prisma.pengajuan.update({
+    const updated = await this.prisma.pengajuan.update({
       where: { pengajuan_id: pengajuanId },
       data: {
         status: STATUS.DITOLAK,
@@ -369,6 +369,14 @@ export class PengajuanService {
       },
       include: this.pengajuanInclude,
     });
+
+    await this.notifikasiService.kirimKeAdminDanSuperAdmin(
+      'Pengajuan Dibatalkan oleh Pemohon',
+      `Pemohon membatalkan pengajuan. Alasan: ${dto.alasan ?? 'Dibatalkan oleh pemohon'}`,
+      userId,
+    );
+
+    return updated;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

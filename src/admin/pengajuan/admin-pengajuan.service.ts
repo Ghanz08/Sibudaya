@@ -630,7 +630,8 @@ export class AdminPengajuanService {
               pengajuan_id: pengajuanId,
               tanggal_survey: now,
               status: targetStatus,
-              catatan: targetStatus === STATUS.DITOLAK ? rejectionNote : dto.note,
+              catatan:
+                targetStatus === STATUS.DITOLAK ? rejectionNote : dto.note,
             },
             update: {
               status: targetStatus,
@@ -682,8 +683,7 @@ export class AdminPengajuanService {
             where: { pengajuan_id: pengajuanId },
             data: {
               status: targetStatus,
-              tanggal_konfirmasi:
-                targetStatus === STATUS.SELESAI ? now : null,
+              tanggal_konfirmasi: targetStatus === STATUS.SELESAI ? now : null,
             },
           });
 
@@ -718,7 +718,8 @@ export class AdminPengajuanService {
             create: {
               pengajuan_id: pengajuanId,
               status: targetStatus,
-              catatan: targetStatus === STATUS.DITOLAK ? rejectionNote : undefined,
+              catatan:
+                targetStatus === STATUS.DITOLAK ? rejectionNote : undefined,
             },
             update: {
               status: targetStatus,
@@ -820,6 +821,30 @@ export class AdminPengajuanService {
       }
     });
 
+    const timelineTitleMap: Record<UpdateTimelineStatusDto['step'], string> = {
+      PEMERIKSAAN: 'Pemeriksaan Pengajuan',
+      SURVEY: 'Survey Lapangan',
+      SURAT_PERSETUJUAN: 'Surat Persetujuan',
+      PENGIRIMAN: 'Pengiriman Sarana',
+      PELAPORAN: 'Laporan Kegiatan',
+      PENCAIRAN: 'Pencairan Dana',
+    };
+
+    const stepLabel = timelineTitleMap[dto.step] ?? dto.step;
+    const statusLabelMap: Record<UpdateTimelineStatusDto['status'], string> = {
+      IN_PROGRESS: 'DALAM PROSES',
+      COMPLETED: 'SELESAI',
+      REJECTED: 'DITOLAK',
+    };
+    const statusLabel = statusLabelMap[dto.status] ?? dto.status;
+
+    const userId = pengajuan.lembaga_budaya.user_id;
+    await this.kirimNotifikasiUserDanSuperAdmin(
+      userId,
+      `${stepLabel} Diperbarui`,
+      `${stepLabel} diperbarui menjadi ${statusLabel}.${dto.note ? ` Catatan: ${dto.note}` : ''}`,
+    );
+
     return this.findDetailOrThrow(pengajuanId);
   }
 
@@ -880,7 +905,7 @@ export class AdminPengajuanService {
   ) {
     await Promise.all([
       this.notifikasiService.kirim(userId, judul, pesan),
-      this.notifikasiService.kirimKeSuperAdmin(judul, pesan),
+      this.notifikasiService.kirimKeAdminDanSuperAdmin(judul, pesan, userId),
     ]);
   }
 }
