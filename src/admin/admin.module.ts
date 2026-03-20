@@ -5,6 +5,10 @@ import { AdminFasilitasiController } from './fasilitasi/admin-fasilitasi.control
 import { AdminFasilitasiService } from './fasilitasi/admin-fasilitasi.service';
 import { AdminAccountController } from './pengaturan-akun/admin-account.controller';
 import { AdminAccountService } from './pengaturan-akun/admin-account.service';
+import { AdminPengajuanAssertionService } from './pengajuan/services/admin-pengajuan-assertion.service';
+import { AdminPengajuanNotifierService } from './pengajuan/services/admin-pengajuan-notifier.service';
+import { AdminPengajuanQueryService } from './pengajuan/services/admin-pengajuan-query.service';
+import { AdminPengajuanTimelineService } from './pengajuan/services/admin-pengajuan-timeline.service';
 
 @Module({
   controllers: [
@@ -14,6 +18,10 @@ import { AdminAccountService } from './pengaturan-akun/admin-account.service';
   ],
   providers: [
     AdminPengajuanService,
+    AdminPengajuanQueryService,
+    AdminPengajuanAssertionService,
+    AdminPengajuanNotifierService,
+    AdminPengajuanTimelineService,
     AdminFasilitasiService,
     AdminAccountService,
   ],

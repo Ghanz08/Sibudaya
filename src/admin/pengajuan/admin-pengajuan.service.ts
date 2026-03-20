@@ -5,8 +5,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UploadService } from '../../common/upload/upload.service';
-import { NotifikasiService } from '../../notifikasi/notifikasi.service';
 import { STATUS } from '../../common/constants/status.constants';
+import { AdminPengajuanAssertionService } from './services/admin-pengajuan-assertion.service';
+import { AdminPengajuanNotifierService } from './services/admin-pengajuan-notifier.service';
+import { AdminPengajuanQueryService } from './services/admin-pengajuan-query.service';
+import { AdminPengajuanTimelineService } from './services/admin-pengajuan-timeline.service';
 import {
   FilterPengajuanDto,
   SetSurveyDto,
@@ -25,44 +28,20 @@ export class AdminPengajuanService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly uploadService: UploadService,
-    private readonly notifikasiService: NotifikasiService,
+    private readonly queryService: AdminPengajuanQueryService,
+    private readonly assertionService: AdminPengajuanAssertionService,
+    private readonly notifierService: AdminPengajuanNotifierService,
+    private readonly timelineService: AdminPengajuanTimelineService,
   ) {}
 
   // ── List & Detail ─────────────────────────────────────────────────────────
 
   findAll(filter: FilterPengajuanDto) {
-    return this.prisma.pengajuan.findMany({
-      where: {
-        ...(filter.status && { status: filter.status }),
-        ...(filter.jenis_fasilitasi_id && {
-          jenis_fasilitasi_id: Number(filter.jenis_fasilitasi_id),
-        }),
-      },
-      include: {
-        lembaga_budaya: { include: { sertifikat_nik: true } },
-        jenis_fasilitasi: true,
-        paket_fasilitasi: true,
-      },
-      orderBy: { tanggal_pengajuan: 'desc' },
-    });
+    return this.queryService.findAll(filter);
   }
 
   async findDetail(pengajuanId: string) {
-    const data = await this.prisma.pengajuan.findUnique({
-      where: { pengajuan_id: pengajuanId },
-      include: {
-        lembaga_budaya: { include: { users: true, sertifikat_nik: true } },
-        jenis_fasilitasi: true,
-        paket_fasilitasi: true,
-        surat_persetujuan: true,
-        survey_lapangan: true,
-        laporan_kegiatan: true,
-        pencairan_dana: true,
-        pengiriman_sarana: true,
-      },
-    });
-    if (!data) throw new NotFoundException('Pengajuan tidak ditemukan');
-    return data;
+    return this.queryService.findDetail(pengajuanId);
   }
 
   // ── Step 2: Pemeriksaan ───────────────────────────────────────────────────
@@ -555,347 +534,31 @@ export class AdminPengajuanService {
     pengajuanId: string,
     dto: UpdateTimelineStatusDto,
   ) {
-    const pengajuan = await this.findDetailOrThrow(pengajuanId);
-    const isPentas = pengajuan.jenis_fasilitasi_id === 1;
-    const now = new Date();
-
-    const targetStatus =
-      dto.status === 'COMPLETED'
-        ? STATUS.SELESAI
-        : dto.status === 'REJECTED'
-          ? STATUS.DITOLAK
-          : STATUS.DALAM_PROSES;
-    const rejectionNote = dto.note?.trim();
-
-    if (targetStatus === STATUS.DITOLAK && !rejectionNote) {
-      throw new BadRequestException('Alasan penolakan wajib diisi');
-    }
-
-    await this.prisma.$transaction(async (tx) => {
-      switch (dto.step) {
-        case 'PEMERIKSAAN': {
-          await tx.pengajuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: {
-              status_pemeriksaan:
-                targetStatus === STATUS.SELESAI
-                  ? STATUS.DISETUJUI
-                  : targetStatus,
-              status:
-                targetStatus === STATUS.DITOLAK
-                  ? STATUS.DITOLAK
-                  : STATUS.DALAM_PROSES,
-              ...(targetStatus === STATUS.DITOLAK
-                ? { catatan_pemeriksaan: rejectionNote }
-                : {}),
-              ...(targetStatus !== STATUS.DITOLAK
-                ? { catatan_pemeriksaan: null }
-                : {}),
-            },
-          });
-
-          await tx.survey_lapangan.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.surat_persetujuan.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.pengiriman_sarana.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.laporan_kegiatan.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.pencairan_dana.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          break;
-        }
-
-        case 'SURVEY': {
-          if (isPentas) {
-            throw new BadRequestException(
-              'Step survey hanya tersedia untuk Fasilitasi Hibah',
-            );
-          }
-
-          await tx.pengajuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: { status_pemeriksaan: STATUS.DISETUJUI },
-          });
-
-          await tx.survey_lapangan.upsert({
-            where: { pengajuan_id: pengajuanId },
-            create: {
-              pengajuan_id: pengajuanId,
-              tanggal_survey: now,
-              status: targetStatus,
-              catatan:
-                targetStatus === STATUS.DITOLAK ? rejectionNote : dto.note,
-            },
-            update: {
-              status: targetStatus,
-              ...(targetStatus === STATUS.DITOLAK
-                ? { catatan: rejectionNote }
-                : dto.note
-                  ? { catatan: dto.note }
-                  : {}),
-            },
-          });
-
-          await tx.pengajuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: {
-              status: STATUS.DALAM_PROSES,
-            },
-          });
-
-          await tx.surat_persetujuan.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.pengiriman_sarana.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.laporan_kegiatan.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          break;
-        }
-
-        case 'SURAT_PERSETUJUAN': {
-          if (targetStatus === STATUS.DITOLAK) {
-            throw new BadRequestException(
-              'Penolakan step surat persetujuan belum didukung karena tidak ada kolom alasan penolakan',
-            );
-          }
-
-          const surat = await tx.surat_persetujuan.findUnique({
-            where: { pengajuan_id: pengajuanId },
-          });
-
-          if (!surat) {
-            throw new BadRequestException(
-              'Surat persetujuan belum diunggah. Unggah surat terlebih dahulu.',
-            );
-          }
-
-          await tx.surat_persetujuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: {
-              status: targetStatus,
-              tanggal_konfirmasi: targetStatus === STATUS.SELESAI ? now : null,
-            },
-          });
-
-          await tx.pengajuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: {
-              status: STATUS.DALAM_PROSES,
-            },
-          });
-
-          await tx.pengiriman_sarana.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.laporan_kegiatan.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          await tx.pencairan_dana.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          break;
-        }
-
-        case 'PENGIRIMAN': {
-          if (isPentas) {
-            throw new BadRequestException(
-              'Step pengiriman hanya tersedia untuk Fasilitasi Hibah',
-            );
-          }
-
-          await tx.pengiriman_sarana.upsert({
-            where: { pengajuan_id: pengajuanId },
-            create: {
-              pengajuan_id: pengajuanId,
-              status: targetStatus,
-              catatan:
-                targetStatus === STATUS.DITOLAK ? rejectionNote : undefined,
-            },
-            update: {
-              status: targetStatus,
-              ...(targetStatus === STATUS.DITOLAK
-                ? { catatan: rejectionNote }
-                : {}),
-            },
-          });
-
-          await tx.pengajuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: {
-              status:
-                targetStatus === STATUS.DITOLAK
-                  ? STATUS.DITOLAK
-                  : STATUS.DALAM_PROSES,
-            },
-          });
-
-          await tx.laporan_kegiatan.deleteMany({
-            where: { pengajuan_id: pengajuanId },
-          });
-          break;
-        }
-
-        case 'PELAPORAN': {
-          await tx.laporan_kegiatan.upsert({
-            where: { pengajuan_id: pengajuanId },
-            create: {
-              pengajuan_id: pengajuanId,
-              status: targetStatus,
-              catatan_admin:
-                targetStatus === STATUS.DITOLAK ? rejectionNote : dto.note,
-            },
-            update: {
-              status: targetStatus,
-              ...(targetStatus === STATUS.DITOLAK
-                ? { catatan_admin: rejectionNote }
-                : dto.note
-                  ? { catatan_admin: dto.note }
-                  : {}),
-            },
-          });
-
-          if (isPentas) {
-            await tx.pencairan_dana.deleteMany({
-              where: { pengajuan_id: pengajuanId },
-            });
-          }
-
-          await tx.pengajuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: {
-              status:
-                !isPentas && targetStatus === STATUS.SELESAI
-                  ? STATUS.SELESAI
-                  : STATUS.DALAM_PROSES,
-            },
-          });
-          break;
-        }
-
-        case 'PENCAIRAN': {
-          if (!isPentas) {
-            throw new BadRequestException(
-              'Step pencairan hanya tersedia untuk Fasilitasi Pentas',
-            );
-          }
-
-          if (targetStatus === STATUS.DITOLAK) {
-            throw new BadRequestException(
-              'Penolakan step pencairan belum didukung karena tidak ada kolom alasan penolakan',
-            );
-          }
-
-          await tx.pencairan_dana.upsert({
-            where: { pengajuan_id: pengajuanId },
-            create: {
-              pengajuan_id: pengajuanId,
-              status: targetStatus,
-            },
-            update: { status: targetStatus },
-          });
-
-          await tx.pengajuan.update({
-            where: { pengajuan_id: pengajuanId },
-            data: {
-              status:
-                targetStatus === STATUS.SELESAI
-                  ? STATUS.SELESAI
-                  : STATUS.DALAM_PROSES,
-            },
-          });
-          break;
-        }
-
-        default:
-          throw new BadRequestException('Step timeline tidak dikenali');
-      }
-    });
-
-    const timelineTitleMap: Record<UpdateTimelineStatusDto['step'], string> = {
-      PEMERIKSAAN: 'Pemeriksaan Pengajuan',
-      SURVEY: 'Survey Lapangan',
-      SURAT_PERSETUJUAN: 'Surat Persetujuan',
-      PENGIRIMAN: 'Pengiriman Sarana',
-      PELAPORAN: 'Laporan Kegiatan',
-      PENCAIRAN: 'Pencairan Dana',
-    };
-
-    const stepLabel = timelineTitleMap[dto.step] ?? dto.step;
-    const statusLabelMap: Record<UpdateTimelineStatusDto['status'], string> = {
-      IN_PROGRESS: 'DALAM PROSES',
-      COMPLETED: 'SELESAI',
-      REJECTED: 'DITOLAK',
-    };
-    const statusLabel = statusLabelMap[dto.status] ?? dto.status;
-
-    const userId = pengajuan.lembaga_budaya.user_id;
-    await this.kirimNotifikasiUserDanSuperAdmin(
-      userId,
-      `${stepLabel} Diperbarui`,
-      `${stepLabel} diperbarui menjadi ${statusLabel}.${dto.note ? ` Catatan: ${dto.note}` : ''}`,
-    );
-
-    return this.findDetailOrThrow(pengajuanId);
+    return this.timelineService.updateTimelineStatus(pengajuanId, dto);
   }
 
   // ── Private Helpers ───────────────────────────────────────────────────────
 
   private async findDetailOrThrow(pengajuanId: string) {
-    const data = await this.prisma.pengajuan.findUnique({
-      where: { pengajuan_id: pengajuanId },
-      include: {
-        lembaga_budaya: { include: { users: true, sertifikat_nik: true } },
-        jenis_fasilitasi: true,
-        paket_fasilitasi: true,
-        surat_persetujuan: true,
-        survey_lapangan: true,
-        laporan_kegiatan: true,
-        pencairan_dana: true,
-        pengiriman_sarana: true,
-      },
-    });
-    if (!data) throw new NotFoundException('Pengajuan tidak ditemukan');
-    return data;
+    return this.queryService.findDetailOrThrow(pengajuanId);
   }
 
   private assertPemeriksaanDisetujui(
     pengajuan: Awaited<ReturnType<AdminPengajuanService['findDetailOrThrow']>>,
   ) {
-    if (pengajuan.status_pemeriksaan !== STATUS.DISETUJUI) {
-      throw new BadRequestException(
-        'Pemeriksaan data belum disetujui. Tahap ini belum bisa dilanjutkan.',
-      );
-    }
+    this.assertionService.assertPemeriksaanDisetujui(pengajuan);
   }
 
   private assertJenisPentas(
     pengajuan: Awaited<ReturnType<AdminPengajuanService['findDetailOrThrow']>>,
   ) {
-    if (pengajuan.jenis_fasilitasi_id !== 1) {
-      throw new BadRequestException(
-        'Aksi ini hanya berlaku untuk Fasilitasi Pentas',
-      );
-    }
+    this.assertionService.assertJenisPentas(pengajuan);
   }
 
   private assertJenisHibah(
     pengajuan: Awaited<ReturnType<AdminPengajuanService['findDetailOrThrow']>>,
   ) {
-    if (pengajuan.jenis_fasilitasi_id !== 2) {
-      throw new BadRequestException(
-        'Aksi ini hanya berlaku untuk Fasilitasi Hibah',
-      );
-    }
+    this.assertionService.assertJenisHibah(pengajuan);
   }
 
   private async kirimNotifikasiUserDanSuperAdmin(
@@ -903,9 +566,10 @@ export class AdminPengajuanService {
     judul: string,
     pesan: string,
   ) {
-    await Promise.all([
-      this.notifikasiService.kirim(userId, judul, pesan),
-      this.notifikasiService.kirimKeAdminDanSuperAdmin(judul, pesan, userId),
-    ]);
+    await this.notifierService.kirimNotifikasiUserDanSuperAdmin(
+      userId,
+      judul,
+      pesan,
+    );
   }
 }
